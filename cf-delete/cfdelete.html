@@ -1,0 +1,27 @@
+<html>
+	<head>
+		<title>Cloud Files Deletion Utility</title>
+	</head>
+	<body>
+		<center>
+		<h1>Cloud Files Deletion Utility</h1>
+		<h1>This deletes ALL THE THINGS</h1>
+		<h1>Once you hit submit, it will start deleting, no going back</h1>
+		<br>You only need to specify an endpoint if you want to check what is stored (check_cf_stats)<br><br>
+		<FORM action="/cgi-bin/cfdeleteweb.py" method="GET" enctype="application/x-www-form-urlencoded">
+			<b>
+				<font face="Courier">
+					Username:<INPUT type="text" size="35" name="username"><br>
+					&nbsp;API Key:<INPUT type="text" size="35" name="api_key"><br>
+					(this is optional if deleteing and needed if checking what exists in the account)<br>
+					ORD<INPUT type="radio" name="region" value="ord">
+					DFW<INPUT type="radio" name="region" value="dfw">
+					LON<INPUT type="radio" name="region" value="lon"><br>
+				</font>
+			</b>
+			<INPUT type="submit" name="submit" value="delete">
+			<INPUT type="submit" name="submit" value="check_cf_stats">
+		</FORM>
+		</center>
+	</body>
+</html>
