@@ -127,12 +127,18 @@ def get_containers():
             continue
         try:
             for names in json_response:
-                containerlist.append(names['name']).encode('utf-8')
-                lastcontainer = containerlist[-1]
+                containerlist.append(names['name'])
+                print lastcontainer
         except Exception:
             print 'Error while parsing returned container list.'
+        if args.verbose:
+            print 'Number of Containers:\t', len(containerlist)
+        if args.veryverbose:
+            for i in containerlist:
+                print 'Container:\t' + i
+        #do the deletion
         container_delete_pool = multiprocessing.Pool(args.cc)
-        container_delete_pool.map(del_containers, containerlist)
+        container_delete_pool.map(del_container, containerlist)
         container_delete_pool.close()
         container_delete_pool.join()
         if len(containerlist) >= containerlistsize:
@@ -143,11 +149,6 @@ def get_containers():
                     'containers were added while we were getting the list ' +
                     'and you still want to delete them.')
             connection.close()
-            if args.verbose:
-                print 'Number of Containers:\t', len(containerlist)
-            if args.veryverbose:
-                for i in containerlist:
-                    print 'Container:\t' + i
             break
 
 
@@ -200,7 +201,7 @@ def del_container_contents(container, objectlist, lastobject):
     if not skipobjects:
         for obj in objectlist:
             retry = True
-            while retry != False:
+            while retry:
                 retry = False
                 headers = {'X-Auth-Token': authdata['token'],
                     'Connection': 'Keep-Alive'}
@@ -226,7 +227,7 @@ def del_container_contents(container, objectlist, lastobject):
     connection.close()
 
 
-def del_containers(containerlist):
+def del_container(container):
     """
     Gets the objects in a continer and deletes the objects and \
     the container via the del_container_contents function
@@ -236,135 +237,126 @@ def del_containers(containerlist):
     monkey.patch_all()
     global authdata
     endpoint = authdata['endpoint'].split('/')[2]
-    #delete containers
-    for container in containerlist:
-        #reset vars as needed
-        #container = containerlist
-        if isinstance(containerlist, str):
-            container = containerlist
-            containerlist = ''
-        container = container.encode('utf-8')
-        lastobject = ''
-        objlistsize = 0
-        objlistsent = 0
-        runonce = True
-        pool = gevent_pool(args.oc)
-        while True:
-            headers = {'X-Auth-Token': authdata['token'],
-                'Connection': 'Keep-Alive'}
-            connection = httplib.HTTPSConnection(endpoint, 443)
-            if args.veryverbose:
-                connection.set_debuglevel(1)
-            objectlist = []
-            filepath = '/v1/' + authdata['tenantid'] + '/' + \
-                        quote(container) + '/?limit=10000&format=json'
-            if lastobject:
-                filepath = filepath + '&marker=' + quote(lastobject)
-            if args.verbose:
-                print filepath
-            connection.request('GET', filepath, '', headers)
-            response = connection.getresponse()
-            if response.status == 401:
-                print 'Auth data is bad or stale, getting auth data again'
-                print authdata['token']
-                authdata = cfauth()
-                retry = True
-                continue
-            elif response.status == 404:
-                print ('Tried to get data on a the container ' + container +
-                    ' that does not exist\n\tpossible contention issue, ' +
-                    'please wait and try again\n\tgoing on to the next ' +
-                    'container (if one exists)')
-                break
-            json_response = json.loads(response.read())
-            if runonce:
-                objlistsize = int(response.getheader(
-                    'X-Container-Object-Count'))
-                if args.verbose:
-                    if objlistsize == 0:
-                        print ('No objects to delete, proceeding to ' +
-                            'container delete')
-                    elif objlistsize > args.oc * 10:
-                        print ('Going to delete ' + str(objlistsize) +
-                            ' objects from ' + container +
-                            ' at about 100 per second (hopefully).')
-                    else:
-                        print ('Going to delete ' + str(objlistsize) +
-                            ' objects at about 3-4 per second as there ' +
-                            'are less then ' + str(args.oc * 10) +
-                            ' objects in ' + container + '.')
-                runonce = False
-            if args.veryverbose:
-                if len(json_response) > 0:
-                    print json.dumps(json_response, indent=2)
-                else:
-                    print 'No objects in container \'' + container + '\'.'
-            try:
-                if len(json_response) > 0:
-                    for obj in json_response:
-                        objectlist.append(obj['name'].encode('utf-8'))
-                    lastobject = objectlist[-1]
-                    if args.verbose:
-                        print lastobject
-            except Exception:
-                print 'Error while parsing returned object list.'
-            #split objets into managable chunks
-            if objlistsize == 0:
-                pass
-            elif (args.oc * 10) <= objlistsize <= (args.oc * 10000):
-                listOfObjectLists = ([objectlist[i:i + args.oc]
-                    for i in range(0, len(objectlist), args.oc)])
-                for sublist in listOfObjectLists:
-                    pool.apply_async(del_container_contents, args=(container,
-                        sublist, sublist))
-            else:
-                pool.apply_async(del_container_contents, args=(container,
-                    objectlist, lastobject))
-            pool.wait_available()
-            objlistsent += len(objectlist)
-            #check to see if we sent all the objects, if so, we wait for them
-            #to be deleted and then perform the container delete.
-            try:
-                if objlistsent < objlistsize:
-                    continue
-                elif objlistsent == objlistsize:
-                    pool.join()
-                    #sleep to help avoid contention issues, can probably be
-                    #lowered if used with container sizes that are tiny
-                    #(less then 500 objects)
-                    #time.sleep(15)
-                    #delete the container
-                    retry = True
-                    while retry:
-                        retry = False
-                        headers = {'X-Auth-Token': authdata['token'],
-                            'Connection': 'Keep-Alive'}
-                        connection = httplib.HTTPSConnection(endpoint, 443)
-                        if args.veryverbose:
-                            connection.set_debuglevel(1)
-                        connection.request('DELETE',
-                            '/v1/' + authdata['tenantid'] + '/' +
-                            quote(container), '', headers)
-                        response = connection.getresponse()
-                        response.read()
-                        if response.status == 401:
-                            authdata = cfauth()
-                            retry = True
-                            continue
-                        connection.close()
-                    break
-                else:
-                    pool.join()
-                    raise
-            except Exception:
-                print ('Somehow, we tried to delete more objects then' +
-                    'existed in the container...\n' +
-                    'Not sending delete for container.')
-                break
-            finally:
-                connection.close()
-        if isinstance(containerlist, str):
+    lastobject = ''
+    container = container.encode('utf-8')
+    objlistsize = 0
+    objlistsent = 0
+    runonce = True
+    pool = gevent_pool(args.oc)
+    while True:
+        headers = {'X-Auth-Token': authdata['token'],
+            'Connection': 'Keep-Alive'}
+        connection = httplib.HTTPSConnection(endpoint, 443)
+        if args.veryverbose:
+            connection.set_debuglevel(1)
+        objectlist = []
+        filepath = '/v1/' + authdata['tenantid'] + '/' + \
+                    quote(container) + '/?limit=10000&format=json'
+        if lastobject:
+            filepath = filepath + '&marker=' + quote(lastobject)
+        if args.verbose:
+            print filepath
+        connection.request('GET', filepath, '', headers)
+        response = connection.getresponse()
+        if response.status == 401:
+            print 'Auth data is bad or stale, getting auth data again'
+            print authdata['token']
+            authdata = cfauth()
+            retry = True
+            continue
+        elif response.status == 404:
+            print ('Tried to get data on a the container ' + container +
+                ' that does not exist\n\tpossible contention issue, ' +
+                'please wait and try again\n\tgoing on to the next ' +
+                'container (if one exists)')
             break
+        json_response = json.loads(response.read())
+        if runonce:
+            objlistsize = int(response.getheader(
+                'X-Container-Object-Count'))
+            if args.verbose:
+                if objlistsize == 0:
+                    print ('No objects to delete, proceeding to ' +
+                        'container delete')
+                elif objlistsize > args.oc * 10:
+                    print ('Going to delete ' + str(objlistsize) +
+                        ' objects from ' + container +
+                        ' at about 100 per second (hopefully).')
+                else:
+                    print ('Going to delete ' + str(objlistsize) +
+                        ' objects at about 3-4 per second as there ' +
+                        'are less then ' + str(args.oc * 10) +
+                        ' objects in ' + container + '.')
+            runonce = False
+        if args.veryverbose:
+            if len(json_response) > 0:
+                print json.dumps(json_response, indent=2)
+            else:
+                print 'No objects in container \'' + container + '\'.'
+        try:
+            if len(json_response) > 0:
+                for obj in json_response:
+                    objectlist.append(obj['name'].encode('utf-8'))
+                lastobject = objectlist[-1]
+                if args.verbose:
+                    print lastobject
+        except Exception:
+            print 'Error while parsing returned object list.'
+        #split objets into managable chunks
+        if objlistsize == 0:
+            pass
+        elif (args.oc * 10) <= objlistsize <= (args.oc * 10000):
+            listOfObjectLists = ([objectlist[i:i + args.oc]
+                for i in range(0, len(objectlist), args.oc)])
+            for sublist in listOfObjectLists:
+                pool.apply_async(del_container_contents, args=(container,
+                    sublist, sublist))
+        else:
+            pool.apply_async(del_container_contents, args=(container,
+                objectlist, lastobject))
+        pool.wait_available()
+        objlistsent += len(objectlist)
+        #check to see if we sent all the objects, if so, we wait for them
+        #to be deleted and then perform the container delete.
+        try:
+            if objlistsent < objlistsize:
+                continue
+            elif objlistsent == objlistsize:
+                pool.join()
+                #sleep to help avoid contention issues, can probably be
+                #lowered if used with container sizes that are tiny
+                #(less then 500 objects)
+                #time.sleep(15)
+                #delete the container
+                retry = True
+                while retry:
+                    retry = False
+                    headers = {'X-Auth-Token': authdata['token'],
+                        'Connection': 'Keep-Alive'}
+                    connection = httplib.HTTPSConnection(endpoint, 443)
+                    if args.veryverbose:
+                        connection.set_debuglevel(1)
+                    connection.request('DELETE',
+                        '/v1/' + authdata['tenantid'] + '/' +
+                        quote(container), '', headers)
+                    response = connection.getresponse()
+                    response.read()
+                    if response.status == 401:
+                        authdata = cfauth()
+                        retry = True
+                        continue
+                    connection.close()
+                break
+            else:
+                pool.join()
+                raise
+        except Exception:
+            print ('Somehow, we tried to delete more objects then' +
+                'existed in the container...\n' +
+                'Not sending delete for container.')
+            break
+        finally:
+            connection.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Gets auth data via json')
@@ -421,7 +413,7 @@ if __name__ == '__main__':
         try:
             authdata = cfauth()
             container_delete_pool = multiprocessing.Pool(args.cc)
-            container_delete_pool.map(del_containers, args.container)
+            container_delete_pool.map(del_container, args.container)
             container_delete_pool.close()
             container_delete_pool.join()
         except (KeyboardInterrupt, SystemExit, Exception):
