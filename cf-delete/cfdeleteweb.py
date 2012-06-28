@@ -75,10 +75,16 @@ def cfauth(user=None, apikey=None, region=None):
                         cfdetails['tenantid'] = endpoint['tenantId']
                     if endpoint['region'] == 'ORD':
                         cfdetails['ORD'] = True
-                    elif endpoint['region'] == 'DFW':
+                    else:
+                        cfdetails['ORD'] = False
+                    if endpoint['region'] == 'DFW':
                         cfdetails['DFW'] = True
-                    elif endpoint['region'] == 'LON':
+                    else:
+                        cfdetails['DFW'] = False
+                    if endpoint['region'] == 'LON':
                         cfdetails['LON'] = True
+                    else:
+                        cfdetails['LON'] = False
             elif service['name'] == 'cloudFilesCDN':
                 for endpoint in service['endpoints']:
                     if endpoint['region'] == region:
@@ -208,7 +214,7 @@ if __name__ == '__main__':
     else:
         submit = None
     command = ('/usr/bin/at now <<< \'/usr/bin/python ' +
-        '/var/www/localhost/cgi-bin/cfdelete.py --murder -d '
+        '/var/www/localhost/cgi-bin/cfdelete.py --murder -d --cc 2 '
         '-u ' + user + ' -a ' + api + ' -e ')
     #check if already running and if so, die
     print 'Content-type: text/html\n'
