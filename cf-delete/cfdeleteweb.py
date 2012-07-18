@@ -33,7 +33,7 @@ def check_if_running(apikey=None):
         closebody()
     #get process list
     processes = [(int(p), c) for p, c in [x.rstrip('\n').split(' ', 1)
-        for x in os.popen('ps h -eo pid:1,command | grep -v \'grep \' ' +
+        for x in os.popen('ps h -eo pid:1,cfcommand | grep -v \'grep \' ' +
             '| grep ' + apikey)]]
     #stages for run or quit
     if processes:
@@ -75,14 +75,20 @@ def cfauth(user=None, apikey=None, region=None):
                         cfdetails['tenantid'] = endpoint['tenantId']
                     if endpoint['region'] == 'ORD':
                         cfdetails['ORD'] = True
+                        cfdetails['ORD-ENDPOINT'] = endpoint['publicURL']
+                        cfdetails['tenantid'] = endpoint['tenantId']
                     else:
                         cfdetails['ORD'] = False
                     if endpoint['region'] == 'DFW':
                         cfdetails['DFW'] = True
+                        cfdetails['DFW-ENDPOINT'] = endpoint['publicURL']
+                        cfdetails['tenantid'] = endpoint['tenantId']
                     else:
                         cfdetails['DFW'] = False
                     if endpoint['region'] == 'LON':
                         cfdetails['LON'] = True
+                        cfdetails['LON-ENDPOINT'] = endpoint['publicURL']
+                        cfdetails['tenantid'] = endpoint['tenantId']
                     else:
                         cfdetails['LON'] = False
             elif service['name'] == 'cloudFilesCDN':
@@ -123,14 +129,13 @@ def convert_bytes(bytes):
     return size
 
 
-def check_cf_stats(user=None, apikey=None, region=None):
+def check_cf_stats(user=None, apikey=None, region=None, authdata=None):
     """
     Prints out Cloud files statistics for a given account endpoint.
     """
     if region == None:
         print '\t\tNo region specified<br>'
         closebody()
-    authdata = cfauth(user, api, region)
     headers = {'X-Auth-Token': authdata['token']}
     endpoint = authdata['endpoint'].split('/')[2]
     connection = httplib.HTTPSConnection(endpoint, 443)
@@ -194,6 +199,7 @@ if __name__ == '__main__':
     api = form.getvalue('api_key')
     region = form.getvalue('region')
     submit = form.getvalue('submit')
+    region = form.getvalue('ukaccount')
     #clean up input
     pattern = re.compile('\W')
     if user:
@@ -213,9 +219,16 @@ if __name__ == '__main__':
         submit = re.sub(pattern, '', submit)
     else:
         submit = None
-    command = ('/usr/bin/at now <<< \'/usr/bin/python ' +
-        '/var/www/localhost/cgi-bin/cfdelete.py --murder -d --cc 2 '
+    cfcommand = ('/usr/bin/at now <<< \'/usr/bin/python ' +
+        '/var/www/localhost/cgi-bin/cfdelete.py --murder -d --cc 2 ' +
         '-u ' + user + ' -a ' + api + ' -e ')
+    cscommand = ('/usr/bin/at now <<< \'/usr/bin/python ' +
+        '/var/www/localhost/cgi-bin/csdelete.py --murder' +
+        '-u ' + user + ' -a ' + api + ' -e ')
+    if region:
+        cscommand = cscommand + region
+    else:
+        cscommand = cscommand + 'ord'
     #check if already running and if so, die
     print 'Content-type: text/html\n'
     print '<html>'
@@ -236,26 +249,48 @@ if __name__ == '__main__':
                 print ('\t\t<br><br><br><h3>Endpoint in ORD detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-                command = command + 'ord\''
-                os.system(command)
-                check_cf_stats(user, api, 'ord')
+                cfcommand = cfcommand + 'ord\''
+                os.system(cfcommand)
+                check_cf_stats(user, api, 'ord', authdata)
             elif authdata['DFW']:
                 print ('\t\t<br><br><br><h3>Endpoint in DFW detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-                command = command + 'dfw\''
-                os.system(command)
-                check_cf_stats(user, api, 'dfw')
+                cfcommand = cfcommand + 'dfw\''
+                os.system(cfcommand)
+                check_cf_stats(user, api, 'dfw', authdata)
             elif authdata['LON']:
                 print ('\t\t<br><br><br><h3>Endpoint in LON detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-                command = command + 'lon\''
-                os.system(command)
-                check_cf_stats(user, api, 'lon')
+                cfcommand = cfcommand + 'lon\''
+                os.system(cfcommand)
+                check_cf_stats(user, api, 'lon', authdata)
+            os.system(cscommand)
     elif submit == 'check_cf_stats':
         print ('\t\t<h1>This is an estemate of how long it will take only' +
             '.</h1>')
         print ('\t\t<h2>To be safe, I generall add about 10-25% to the ' +
             'time it will take to delete.</h2>')
-        check_cf_stats(user, api, region)
+        authdata = cfauth(user, api, region)
+        if authdata['ORD']:
+            region = 'ord'
+            authdata['endpoint'] = authdata['ORD-ENDPOINT']
+            print ('\t\t<br><br><br><h3>Endpoint in ORD detected, ' +
+                    'here is what should be deleted and ' +
+                    'about how long it should take:</h3>')
+            check_cf_stats(user, api, region, authdata)
+        if authdata['DFW']:
+            region = 'dfw'
+            authdata['endpoint'] = authdata['DFW-ENDPOINT']
+            print ('\t\t<br><br><br><h3>Endpoint in DFW detected, ' +
+                    'here is what should be deleted and ' +
+                    'about how long it should take:</h3>')
+            check_cf_stats(user, api, region, authdata)
+        if authdata['LON']:
+            region = 'lon'
+            authdata['endpoint'] = authdata['LON-ENDPOINT']
+            print ('\t\t<br><br><br><h3>Endpoint in LON detected, ' +
+                    'here is what should be deleted and ' +
+                    'about how long it should take:</h3>')
+            check_cf_stats(user, api, region, authdata)
