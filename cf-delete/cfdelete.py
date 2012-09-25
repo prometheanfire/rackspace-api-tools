@@ -130,8 +130,7 @@ def get_containers():
                 containerlist.append(names['name'])
                 print lastcontainer
         except Exception:
-            print 'Error while parsing returned container list, exiting.'
-            #sys.exit()
+            print 'Error while parsing returned container list.'
         if args.verbose:
             print 'Number of Containers:\t', len(containerlist)
         if args.veryverbose:

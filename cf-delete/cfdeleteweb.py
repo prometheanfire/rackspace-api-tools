@@ -33,7 +33,7 @@ def check_if_running(apikey=None):
         closebody()
     #get process list
     processes = [(int(p), c) for p, c in [x.rstrip('\n').split(' ', 1)
-        for x in os.popen('ps h -eo pid:1,cfcommand | grep -v \'grep \' ' +
+        for x in os.popen('ps h -eo pid:1,command | grep -v \'grep \' ' +
             '| grep ' + apikey)]]
     #stages for run or quit
     if processes:
@@ -65,32 +65,29 @@ def cfauth(user=None, apikey=None, region=None):
     connection.close()
     #process the request
     cfdetails = {}
+    cfdetails['ORD'], cfdetails['DFW'], cfdetails['LON'] = False, False, False
     try:
         catalogs = json_response['access']['serviceCatalog']
         for service in catalogs:
             if service['name'] == 'cloudFiles':
                 for endpoint in service['endpoints']:
-                    if endpoint['region'] == region:
-                        cfdetails['endpoint'] = endpoint['publicURL']
-                        cfdetails['tenantid'] = endpoint['tenantId']
+                    #if endpoint['region'] == region:
+                    #    cfdetails['endpoint'] = endpoint['publicURL']
+                    #    cfdetails['tenantid'] = endpoint['tenantId']
                     if endpoint['region'] == 'ORD':
                         cfdetails['ORD'] = True
                         cfdetails['ORD-ENDPOINT'] = endpoint['publicURL']
                         cfdetails['tenantid'] = endpoint['tenantId']
-                    else:
-                        cfdetails['ORD'] = False
                     if endpoint['region'] == 'DFW':
                         cfdetails['DFW'] = True
                         cfdetails['DFW-ENDPOINT'] = endpoint['publicURL']
                         cfdetails['tenantid'] = endpoint['tenantId']
-                    else:
-                        cfdetails['DFW'] = False
                     if endpoint['region'] == 'LON':
                         cfdetails['LON'] = True
                         cfdetails['LON-ENDPOINT'] = endpoint['publicURL']
                         cfdetails['tenantid'] = endpoint['tenantId']
-                    else:
-                        cfdetails['LON'] = False
+		#if service['endpoints']['name'] == 'ORD':
+		#    print 'OK'
             elif service['name'] == 'cloudFilesCDN':
                 for endpoint in service['endpoints']:
                     if endpoint['region'] == region:
@@ -152,8 +149,8 @@ def check_cf_stats(user=None, apikey=None, region=None, authdata=None):
     storageused = int(response.getheader('X-Account-Bytes-Used'))
     storageused = convert_bytes(storageused)
     if containercount == 0 and objectcount == 0:
-        print '\t\tNothing to delete in Files.<br>'
-        closebody()
+        print '\t\tNothing to delete in', region + '.<br>'
+	return
     #calculate approximate time til completion
     min_container_delete_time = containercount / 4.0
     max_container_delete_time = containercount / 3.0
@@ -183,7 +180,6 @@ def check_cf_stats(user=None, apikey=None, region=None, authdata=None):
     print ('\t\tI\'d check this again (if the delete is already ' +
         'running) an hour or two after the delete is scheduled to ' +
         ' finish and possibly re-run if needed.<br>')
-    closebody()
 
 
 if __name__ == '__main__':
@@ -226,9 +222,9 @@ if __name__ == '__main__':
         '/var/www/localhost/cgi-bin/csdelete.py --murder' +
         '-u ' + user + ' -a ' + api + ' -e ')
     if region:
-        cscommand = cscommand + region
+        cscommand = cscommand + region + '\''
     else:
-        cscommand = cscommand + 'ord'
+        cscommand = cscommand + 'ord\''
     #check if already running and if so, die
     print 'Content-type: text/html\n'
     print '<html>'
@@ -245,28 +241,31 @@ if __name__ == '__main__':
                 'only.</h1>')
             print ('\t\t<h2>To be safe, I generall add about 10-25% to the ' +
                 'time it will take to delete.</h2>')
+            os.system(cscommand)
             if authdata['ORD']:
                 print ('\t\t<br><br><br><h3>Endpoint in ORD detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-                cfcommand = cfcommand + 'ord\''
-                os.system(cfcommand)
+                #cfcommand = cfcommand + 'ord\''
+                os.system(cfcommand + 'ord\'')
+                authdata['endpoint'] = authdata['ORD-ENDPOINT']
                 check_cf_stats(user, api, 'ord', authdata)
-            elif authdata['DFW']:
+            if authdata['DFW']:
                 print ('\t\t<br><br><br><h3>Endpoint in DFW detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-                cfcommand = cfcommand + 'dfw\''
-                os.system(cfcommand)
+                #cfcommand = cfcommand + 'dfw\''
+                os.system(cfcommand + 'dfw\'')
+                authdata['endpoint'] = authdata['DFW-ENDPOINT']
                 check_cf_stats(user, api, 'dfw', authdata)
-            elif authdata['LON']:
+            if authdata['LON']:
                 print ('\t\t<br><br><br><h3>Endpoint in LON detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-                cfcommand = cfcommand + 'lon\''
-                os.system(cfcommand)
+                #cfcommand = cfcommand + 'lon\''
+                os.system(cfcommand + 'lon\'')
+                authdata['endpoint'] = authdata['LON-ENDPOINT']
                 check_cf_stats(user, api, 'lon', authdata)
-            os.system(cscommand)
     elif submit == 'check_cf_stats':
         print ('\t\t<h1>This is an estemate of how long it will take only' +
             '.</h1>')
@@ -274,23 +273,21 @@ if __name__ == '__main__':
             'time it will take to delete.</h2>')
         authdata = cfauth(user, api, region)
         if authdata['ORD']:
-            region = 'ord'
             authdata['endpoint'] = authdata['ORD-ENDPOINT']
             print ('\t\t<br><br><br><h3>Endpoint in ORD detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-            check_cf_stats(user, api, region, authdata)
+            check_cf_stats(user, api, 'ord', authdata)
         if authdata['DFW']:
-            region = 'dfw'
             authdata['endpoint'] = authdata['DFW-ENDPOINT']
             print ('\t\t<br><br><br><h3>Endpoint in DFW detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-            check_cf_stats(user, api, region, authdata)
+            check_cf_stats(user, api, 'dfw', authdata)
         if authdata['LON']:
-            region = 'lon'
             authdata['endpoint'] = authdata['LON-ENDPOINT']
             print ('\t\t<br><br><br><h3>Endpoint in LON detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-            check_cf_stats(user, api, region, authdata)
+            check_cf_stats(user, api, 'lon', authdata)
+    closebody()
