@@ -25,8 +25,8 @@ import httplib
 from urllib import quote
 import multiprocessing
 
-
-def cfauth(user=None, apikey=None, region=None):
+def cfauth():
+#def cfauth(user=None, apikey=None, region=None):
     """
     Authenticate and return authentication details via returned dict
     """
@@ -94,7 +94,7 @@ def get_containers():
     global authdata
     endpoint = authdata['endpoint'].split('/')[2]
     lastcontainer = ''
-    containerlist = []
+    containerlistsize = ''
     runonce = True
     connection = httplib.HTTPSConnection(endpoint, 443)
     filepath = '/v1/' + authdata['tenantid'] + '/?limit=10000&format=json'
@@ -194,7 +194,6 @@ def del_container_contents(container, objectlist, lastobject):
     global authdata
     endpoint = authdata['endpoint'].split('/')[2]
     connection = httplib.HTTPSConnection(endpoint, 443)
-    retry = True
     if args.veryverbose:
         connection.set_debuglevel(1)
     skipobjects = False
@@ -262,7 +261,6 @@ def del_container(container):
             print 'Auth data is bad or stale, getting auth data again'
             print authdata['token']
             authdata = cfauth()
-            retry = True
             continue
         elif response.status == 404:
             print ('Tried to get data on a the container ' + container +
@@ -410,9 +408,9 @@ if __name__ == '__main__':
         authdata = cfauth()
         get_containers()
     elif args.delete and args.container:
+        container_delete_pool = multiprocessing.Pool(args.cc)
         try:
             authdata = cfauth()
-            container_delete_pool = multiprocessing.Pool(args.cc)
             container_delete_pool.map(del_container, args.container)
             container_delete_pool.close()
             container_delete_pool.join()

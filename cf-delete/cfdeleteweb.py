@@ -26,15 +26,16 @@ import httplib
 
 def check_if_running(apikey=None):
     """
-    gets the process list, not including strings with grep in thier name
+    gets the process list, not including strings with grep in their name
     """
-    if apikey == None:
+    if not apikey:
         print '\t\tNo API key entered, please enter one.'
         closebody()
     #get process list
-    processes = [(int(p), c) for p, c in [x.rstrip('\n').split(' ', 1)
-        for x in os.popen('ps h -eo pid:1,command | grep -v \'grep \' ' +
-            '| grep ' + apikey)]]
+    processes = []
+    for p, c in [x.rstrip('\n').split(' ', 1)
+        for x in os.popen('ps h -eo pid:1,command | grep -v \'grep \' | grep ' + apikey)]:
+            processes.append((int(p), c))
     #stages for run or quit
     if processes:
         print '\t\tDelete process already running for this API key.'
@@ -64,8 +65,7 @@ def cfauth(user=None, apikey=None, region=None):
     json_response = json.loads(connection.getresponse().read())
     connection.close()
     #process the request
-    cfdetails = {}
-    cfdetails['ORD'], cfdetails['DFW'], cfdetails['LON'] = False, False, False
+    cfdetails = {'ORD': False, 'DFW': False, 'LON': False}
     try:
         catalogs = json_response['access']['serviceCatalog']
         for service in catalogs:
@@ -102,12 +102,18 @@ def cfauth(user=None, apikey=None, region=None):
 
 
 def closebody():
+    """
+    Closes the body of the returned html.
+    """
     print '\t</body>'
     print '</html>'
     sys.exit()
 
 
 def convert_bytes(bytes):
+    """
+    Converts bytes into the highest order unit of counting bytes.
+    """
     bytes = float(bytes)
     if bytes >= 1099511627776:
         terabytes = bytes / 1099511627776
@@ -126,11 +132,11 @@ def convert_bytes(bytes):
     return size
 
 
-def check_cf_stats(user=None, apikey=None, region=None, authdata=None):
+def check_cf_stats(region=None, authdata=None):
     """
     Prints out Cloud files statistics for a given account endpoint.
     """
-    if region == None:
+    if not region:
         print '\t\tNo region specified<br>'
         closebody()
     headers = {'X-Auth-Token': authdata['token']}
@@ -143,14 +149,14 @@ def check_cf_stats(user=None, apikey=None, region=None, authdata=None):
     if response.status == 401:
         print '\t\tError retrieving Cloud Files details, please try again'
         closebody()
-    #get Cloud Files metedata
+    #get Cloud Files metadata
     containercount = int(response.getheader('X-Account-Container-Count'))
     objectcount = int(response.getheader('X-Account-Object-Count'))
     storageused = int(response.getheader('X-Account-Bytes-Used'))
     storageused = convert_bytes(storageused)
     if containercount == 0 and objectcount == 0:
         print '\t\tNothing to delete in', region + '.<br>'
-	return
+        return
     #calculate approximate time til completion
     min_container_delete_time = containercount / 4.0
     max_container_delete_time = containercount / 3.0
@@ -183,9 +189,6 @@ def check_cf_stats(user=None, apikey=None, region=None, authdata=None):
 
 
 if __name__ == '__main__':
-    """
-    runs cfdelete from cgi
-    """
     #get input
     global user
     global api
@@ -222,9 +225,9 @@ if __name__ == '__main__':
         '/var/www/localhost/cgi-bin/csdelete.py --murder' +
         '-u ' + user + ' -a ' + api + ' -e ')
     if region:
-        cscommand = cscommand + region + '\''
+        cscommand += region + '\''
     else:
-        cscommand = cscommand + 'ord\''
+        cscommand += 'ord\''
     #check if already running and if so, die
     print 'Content-type: text/html\n'
     print '<html>'
@@ -233,13 +236,13 @@ if __name__ == '__main__':
     print '\t</head>'
     print '\t<body>'
     if submit == 'delete':
-        if check_if_running(api) == False:
+        if not check_if_running(api):
             authdata = cfauth(user, api, region)
             print ('\t\t<h1>You may have to run this again once it ' +
                 'completes but should not have to (hopefully).</h1><br>')
-            print ('\t\t<h1>This is an estemate of how long it will take ' +
+            print ('\t\t<h1>This is an estimate of how long it will take ' +
                 'only.</h1>')
-            print ('\t\t<h2>To be safe, I generall add about 10-25% to the ' +
+            print ('\t\t<h2>To be safe, I generally add about 10-25% to the ' +
                 'time it will take to delete.</h2>')
             os.system(cscommand)
             if authdata['ORD']:
@@ -249,7 +252,7 @@ if __name__ == '__main__':
                 #cfcommand = cfcommand + 'ord\''
                 os.system(cfcommand + 'ord\'')
                 authdata['endpoint'] = authdata['ORD-ENDPOINT']
-                check_cf_stats(user, api, 'ord', authdata)
+                check_cf_stats('ord', authdata)
             if authdata['DFW']:
                 print ('\t\t<br><br><br><h3>Endpoint in DFW detected, ' +
                     'here is what should be deleted and ' +
@@ -257,7 +260,7 @@ if __name__ == '__main__':
                 #cfcommand = cfcommand + 'dfw\''
                 os.system(cfcommand + 'dfw\'')
                 authdata['endpoint'] = authdata['DFW-ENDPOINT']
-                check_cf_stats(user, api, 'dfw', authdata)
+                check_cf_stats('dfw', authdata)
             if authdata['LON']:
                 print ('\t\t<br><br><br><h3>Endpoint in LON detected, ' +
                     'here is what should be deleted and ' +
@@ -265,11 +268,11 @@ if __name__ == '__main__':
                 #cfcommand = cfcommand + 'lon\''
                 os.system(cfcommand + 'lon\'')
                 authdata['endpoint'] = authdata['LON-ENDPOINT']
-                check_cf_stats(user, api, 'lon', authdata)
+                check_cf_stats('lon', authdata)
     elif submit == 'check_cf_stats':
-        print ('\t\t<h1>This is an estemate of how long it will take only' +
+        print ('\t\t<h1>This is an estimate of how long it will take only' +
             '.</h1>')
-        print ('\t\t<h2>To be safe, I generall add about 10-25% to the ' +
+        print ('\t\t<h2>To be safe, I generally add about 10-25% to the ' +
             'time it will take to delete.</h2>')
         authdata = cfauth(user, api, region)
         if authdata['ORD']:
@@ -277,17 +280,17 @@ if __name__ == '__main__':
             print ('\t\t<br><br><br><h3>Endpoint in ORD detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-            check_cf_stats(user, api, 'ord', authdata)
+            check_cf_stats('ord', authdata)
         if authdata['DFW']:
             authdata['endpoint'] = authdata['DFW-ENDPOINT']
             print ('\t\t<br><br><br><h3>Endpoint in DFW detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-            check_cf_stats(user, api, 'dfw', authdata)
+            check_cf_stats('dfw', authdata)
         if authdata['LON']:
             authdata['endpoint'] = authdata['LON-ENDPOINT']
             print ('\t\t<br><br><br><h3>Endpoint in LON detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-            check_cf_stats(user, api, 'lon', authdata)
+            check_cf_stats('lon', authdata)
     closebody()
