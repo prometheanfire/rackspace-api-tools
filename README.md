@@ -1,4 +1,4 @@
 cloudfiles-tools
 ================
 
-Cloud files tools I've found to be useful
+Cloud files tools I've found to be useful to build
