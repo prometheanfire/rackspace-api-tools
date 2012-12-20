@@ -86,8 +86,6 @@ def cfauth(user=None, apikey=None, region=None):
                         cfdetails['LON'] = True
                         cfdetails['LON-ENDPOINT'] = endpoint['publicURL']
                         cfdetails['tenantid'] = endpoint['tenantId']
-		#if service['endpoints']['name'] == 'ORD':
-		#    print 'OK'
             elif service['name'] == 'cloudFilesCDN':
                 for endpoint in service['endpoints']:
                     if endpoint['region'] == region:
