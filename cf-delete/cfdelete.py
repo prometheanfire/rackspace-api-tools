@@ -121,7 +121,7 @@ def get_containers():
                 authdata = cfauth()
                 continue
         except httplib.BadStatusLine:
-            print 'Failed connection, no data recieved.'
+            print 'Failed connection, no data received.'
             print 'Closing connection and retrying.'
             connection.close()
             connection = httplib.HTTPSConnection(endpoint, 443)
@@ -146,7 +146,7 @@ def get_containers():
             if len(containerlist) > containerlistsize:
                 print ('Somehow got a list of containers that was greater ' +
                     'then where there when this program was started ' +
-                    'Goint to continue under the assumption that ' +
+                    'Going to continue under the assumption that ' +
                     'containers were added while we were getting the list ' +
                     'and you still want to delete them.')
             connection.close()
@@ -229,7 +229,7 @@ def del_container_contents(container, objectlist, lastobject):
 
 def del_container(container):
     """
-    Gets the objects in a continer and deletes the objects and \
+    Gets the objects in a container and deletes the objects and \
     the container via the del_container_contents function
     """
     from gevent.pool import Pool as gevent_pool
@@ -301,7 +301,7 @@ def del_container(container):
                     print lastobject
         except Exception:
             print 'Error while parsing returned object list.'
-        #split objets into managable chunks
+        #split objects into manageable chunks
         if objlistsize == 0:
             pass
         elif (args.oc * 10) <= objlistsize <= (args.oc * 10000):
