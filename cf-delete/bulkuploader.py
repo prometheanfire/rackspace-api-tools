@@ -42,6 +42,7 @@ def object_consumer(container_path, args, authdata,
             for path in paths:
                 object().put(container_path, path, args,
                              authdata, pseudo_dir, connection=conn)
+            conn.close()
         except Empty:
             print 'Nothing to process in object queue, quiting'
             break
@@ -64,12 +65,12 @@ def container_consumer(args=None, authdata=None, queue=None):
             container().put(container_name, args, authdata)
             #object enumeration
             container_dir = os.path.join(args['dir'], container_name) + '/'
-            for dirpath, dirnames, filenames in os.walk(container_dir):
-                for file in filenames:
-                    paths.append(os.path.abspath(os.path.join(dirpath, file)))
-                for dir in dirnames:
-                    if not os.listdir(os.path.abspath(os.path.join(dirpath, dir))):
-                        paths.append(os.path.abspath(os.path.join(dirpath, dir)))
+            for dir_path, dir_names, file_names in os.walk(container_dir):
+                for file in file_names:
+                    paths.append(os.path.abspath(os.path.join(dir_path, file)))
+                for dir in dir_names:
+                    if not os.listdir(os.path.abspath(os.path.join(dir_path, dir))):
+                        paths.append(os.path.abspath(os.path.join(dir_path, dir)))
             if paths:
                 #setup object queues
                 object_queue = JoinableQueue()

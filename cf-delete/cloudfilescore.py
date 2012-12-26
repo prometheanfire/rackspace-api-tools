@@ -52,16 +52,21 @@ class object:
     """
     For object level operations
     """
-    def put(self, container_path, file, args, authdata, pseudo_dir, metadata=None, connection=None):
+    def put(self, container_path, file, args, authdata,
+            pseudo_dir, metadata=None, connection=None):
         """
         Upload an object with metadata optionally specified
         """
         endpoint = authdata['endpoint'].split('/')[2]
         if not connection:
             connection = httplib.HTTPSConnection(endpoint, 443)
+            streamlining = True
+        else:
+            streamlining = False
         headers = {'X-Auth-Token': authdata['token']}
         filepath = ('/v1/' + authdata['tenantid'] + '/' +
-                    quote(container_path) + quote(file.replace(pseudo_dir, ''), safe=''))
+                    quote(container_path) +
+                    quote(file.replace(pseudo_dir, ''), safe=''))
         while True:
             try:
                 if os.path.isdir(file):
@@ -70,7 +75,8 @@ class object:
                     response = connection.getresponse()
                     response.read()
                 else:
-                    connection.request('PUT', filepath, open(file, 'rb'), headers)
+                    connection.request('PUT', filepath,
+                                       open(file, 'rb'), headers)
                     response = connection.getresponse()
                     response.read()
                 if args['verbose']:
@@ -81,7 +87,8 @@ class object:
                 if response.status == 401:
                     authdata=auth.cfendpoint(args)
                     continue
-                connection.close()
+                if not streamlining:
+                    connection.close()
                 break
             except httplib.BadStatusLine:
                 pass
