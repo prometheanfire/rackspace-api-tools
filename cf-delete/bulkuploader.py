@@ -64,7 +64,10 @@ def container_consumer(args=None, authdata=None, queue=None):
             paths = []
             container().put(container_name, args, authdata)
             #object enumeration
-            container_dir = os.path.join(args['dir'], container_name) + '/'
+            if not args['container']:
+                container_dir = os.path.join(args['dir'], container_name) + '/'
+            else:
+                container_dir = os.path.join(args['dir']) + '/'
             for dir_path, dir_names, file_names in os.walk(container_dir):
                 for file in file_names:
                     paths.append(os.path.abspath(os.path.join(dir_path, file)))
@@ -84,7 +87,8 @@ def container_consumer(args=None, authdata=None, queue=None):
                                       for i in range(0, len(paths), args['oc'])])
                 for sublist in paths_list:
                     object_queue.put(sublist)
-                #tailing the queue with a Null marker so the works shut down nicely.
+                #tailing the queue with a Null marker
+                #so the workers shut down nicely.
                 for object_worker in range(args['oc']):
                     object_queue.put(None)
                 object_queue.join()
@@ -104,10 +108,17 @@ def upload(args=None, authdata=None):
     #initalize the containers in parallel
     containers = []
     for obj in os.listdir(args['dir']):
+        if args['container']:
+            containers.append(args['container'])
+            break
         #if os.path.isdir(os.path.abspath(args['dir']+'/'+obj)):
         if os.path.isdir(os.path.join(args['dir'], obj)):
             containers.append(obj)
     if containers:
+        #set container job count to the less of args['cc'] or container count
+        if args['cc'] < len(containers):
+            args['cc'] = len(containers)
+        #create queue and jobs
         container_queue = JoinableQueue()
         for container_worker in range(args['cc']):
             job = Process(target=container_consumer,
@@ -143,7 +154,7 @@ if __name__ == '__main__':
                         help='The source directory you wish to sync')
     parser.add_argument('--cc', type=int, default=3, choices=range(1,101),
                             help='Container concurrency')
-    parser.add_argument('--oc', type=int, default=100, choices=range(1,101),
+    parser.add_argument('--oc', type=int, default=10, choices=range(1,101),
                             help='Object concurrency')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--apikey', '-a',  help='Account api key')

@@ -64,9 +64,13 @@ class object:
         else:
             streamlining = False
         headers = {'X-Auth-Token': authdata['token']}
+        if file[0] == '/':
+            filepath = file.replace('/', '', 1)
+        else:
+            filepath = file
         filepath = ('/v1/' + authdata['tenantid'] + '/' +
                     quote(container_path) +
-                    quote(file.replace(pseudo_dir, ''), safe=''))
+                    quote(filepath.replace(pseudo_dir, ''), safe=''))
         while True:
             try:
                 if os.path.isdir(file):
