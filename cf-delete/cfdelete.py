@@ -409,9 +409,9 @@ if __name__ == '__main__':
         authdata = cfauth()
         get_containers()
     elif args.delete and args.container:
-        container_delete_pool = multiprocessing.Pool(args.cc)
         try:
             authdata = cfauth()
+            container_delete_pool = multiprocessing.Pool(args.cc)
             container_delete_pool.map(del_container, args.container)
             container_delete_pool.close()
             container_delete_pool.join()
