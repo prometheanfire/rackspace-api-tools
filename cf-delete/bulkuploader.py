@@ -40,8 +40,10 @@ def object_consumer(container_path, args, authdata,
             if args['veryverbose']:
                 conn.set_debuglevel(1)
             for path in paths:
+                fullpath = path
+                path = path.lstrip(args['dir'])
                 object().put(container_path, path, args,
-                             authdata, pseudo_dir, connection=conn)
+                             authdata, pseudo_dir, fullpath, connection=conn)
             conn.close()
         except Empty:
             print 'Nothing to process in object queue, quiting'

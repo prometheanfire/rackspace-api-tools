@@ -53,7 +53,7 @@ class object:
     For object level operations
     """
     def put(self, container_path, file, args, authdata,
-            pseudo_dir, metadata=None, connection=None):
+            pseudo_dir, fullpath, metadata=None, connection=None):
         """
         Upload an object with metadata optionally specified
         """
@@ -80,7 +80,7 @@ class object:
                     response.read()
                 else:
                     connection.request('PUT', filepath,
-                                       open(file, 'rb'), headers)
+                                       open(fullpath, 'rb'), headers)
                     response = connection.getresponse()
                     response.read()
                 if args['verbose']:
