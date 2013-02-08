@@ -52,10 +52,17 @@ class object:
     """
     For object level operations
     """
-    def put(self, container_path, file, args, authdata,
-            pseudo_dir, fullpath, metadata=None, connection=None):
+    def put(self, container, obj, fullpath, args, authdata,
+            metadata=None, connection=None):
         """
         Upload an object with metadata optionally specified
+
+        requires the following to be defined:
+        container - container you wish to upload to
+        obj - object name
+        fullpath - full path to file
+        args - args that were passed into the calling script
+        authdata - authdata, returned from the auth class
         """
         endpoint = authdata['endpoint'].split('/')[2]
         if not connection:
@@ -64,16 +71,11 @@ class object:
         else:
             streamlining = False
         headers = {'X-Auth-Token': authdata['token']}
-        if file[0] == '/':
-            filepath = file.replace('/', '', 1)
-        else:
-            filepath = file
         filepath = ('/v1/' + authdata['tenantid'] + '/' +
-                    quote(container_path) +
-                    quote(filepath.replace(pseudo_dir, ''), safe=''))
+                    quote(container) + '/' + quote(obj, safe=''))
         while True:
             try:
-                if os.path.isdir(file):
+                if os.path.isdir(fullpath):
                     headers['Content-Length']=0
                     connection.request('PUT', filepath, '', headers)
                     response = connection.getresponse()

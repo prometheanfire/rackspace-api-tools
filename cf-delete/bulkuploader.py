@@ -17,14 +17,14 @@ Rackspace Cloud Files Bulk Import Script
 """
 
 import argparse
-import os
+import os, re
 from cloudfilescore import auth, container, object
 from multiprocessing import freeze_support, JoinableQueue, Process
 from multiprocessing.queues import Empty
 
 
-def object_consumer(container_path, args, authdata,
-                    pseudo_dir, queue, metadata=None):
+def object_consumer(container_name, args, authdata,
+                    queue, metadata=None):
     """
     Uploads objects in a to a container
     """
@@ -40,10 +40,14 @@ def object_consumer(container_path, args, authdata,
             if args['veryverbose']:
                 conn.set_debuglevel(1)
             for path in paths:
-                fullpath = path
-                path = path.lstrip(args['dir'])
-                object().put(container_path, path, args,
-                             authdata, pseudo_dir, fullpath, connection=conn)
+                #123//opt/oracle-jre-bin-1.7.0.13/lib/desktop/icons/LowContrast/48x48/apps/sun-javaws.png
+                if not args['container']:
+                    obj = re.sub('^' + re.escape(args['dir']) +
+                                container_name + '/', '', path, count=1)
+                else:
+                    obj = re.sub('^' + re.escape(args['dir']), '', path, count=1)
+                object().put(container_name, obj, path, args,
+                             authdata, connection=conn)
             conn.close()
         except Empty:
             print 'Nothing to process in object queue, quiting'
@@ -81,8 +85,8 @@ def container_consumer(args=None, authdata=None, queue=None):
                 object_queue = JoinableQueue()
                 for object_worker in range(args['oc']):
                     job = Process(target=object_consumer,
-                                  args=(container_name + '/', args, authdata,
-                                        container_dir, object_queue,))
+                                  args=(container_name, args,
+                                        authdata, object_queue,))
                     job.daemon=True
                     job.start()
                 paths_list = ([paths[i:i + args['oc']]
