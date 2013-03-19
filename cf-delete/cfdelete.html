@@ -1,24 +1,34 @@
 <html>
-	<head>
-		<title>Cloud Files Deletion Utility</title>
-	</head>
-	<body>
-		<center>
-		<h1>Cloud Deletion Utility</h1>
-		<h1>This deletes ALL THE THINGS</h1>
-		<h1>Once you hit submit, it will start deleting, no going back</h1>
-		<h2>Specifically, this deletes 1st GEN servers and all Cloud Files</h2>
-		<br>check_cf_stats allows you to check the status of a delete or approximately how long it will take<br><br>
-		<FORM action="/cgi-bin/cfdeleteweb.py" method="GET" enctype="application/x-www-form-urlencoded">
-			<b>
-				<font face="Courier">
-					Username:<INPUT type="text" size="35" name="username"><br>
-					&nbsp;API Key:<INPUT type="text" size="35" name="api_key"><br>
-					UK account:<INPUT type="checkbox" name="ukaccount" value="lon"><br>
-				</font>
-			</b>
-			<INPUT type="submit" name="submit" value="delete">
-			<INPUT type="submit" name="submit" value="check_cf_stats">
-		</center>
-	</body>
+<head>
+    <title>Cloud Files Deletion Utility</title>
+</head>
+<body>
+<center>
+    <h1>Cloud Deletion Utility</h1>
+    <h1>This deletes ALL THE THINGS</h1>
+    <h1>Once you hit submit, it will start deleting, no going back</h1>
+    <h2>Specifically, this deletes 1st GEN servers and all Cloud Files</h2>
+    <br>check_cf_stats allows you to check the status of a delete or approximately how long it will take<br><br>
+    <FORM action="/cgi-bin/cfdeleteweb.py" method="GET" enctype="application/x-www-form-urlencoded">
+        <b>
+            <font face="Courier">
+                <label>
+                    Username:
+                    <INPUT type="text" size="35" name="username"><br>
+                </label><br>
+                <label>
+                    &nbsp;API Key:
+                    <INPUT type="text" size="35" name="api_key">
+                </label><br>
+                <label>
+                    UK account:
+                    <INPUT type="checkbox" name="ukaccount" value="lon">
+                </label><br>
+            </font>
+        </b>
+        <INPUT type="submit" name="submit" value="delete">
+        <INPUT type="submit" name="submit" value="check_cf_stats">
+    </FORM>
+</center>
+</body>
 </html>
