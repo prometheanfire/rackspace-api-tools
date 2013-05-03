@@ -217,15 +217,14 @@ if __name__ == '__main__':
     else:
         submit = None
     cfcommand = ('/usr/bin/at now <<< \'/usr/bin/python ' +
-        '/var/www/localhost/cgi-bin/cfdelete.py --murder -d --cc 2 ' +
-        '-u ' + user + ' -a ' + api + ' -e ')
+                 '/var/www/localhost/cgi-bin/cfdelete.py --murder -d --cc 2 ' +
+                 '-u ' + user + ' -a ' + api + ' -e ')
     cscommand = ('/usr/bin/at now <<< \'/usr/bin/python ' +
-        '/var/www/localhost/cgi-bin/csdelete.py --murder' +
-        '-u ' + user + ' -a ' + api + ' -e ')
-    if region:
-        cscommand += region + '\''
-    else:
-        cscommand += 'ord\''
+                 '/var/www/localhost/cgi-bin/csdelete.py --murder ' +
+                 '-u ' + user + ' -a ' + api + ' -e ')
+    ngcommand = ('/usr/bin/at now <<< \'/usr/bin/python ' +
+                 '/var/www/localhost/cgi-bin/del_nextgen.py -u ' +
+                 user + ' -k ' + api + ' -r ')
     #check if already running and if so, die
     print 'Content-type: text/html\n'
     print '<html>'
@@ -242,12 +241,10 @@ if __name__ == '__main__':
                 'only.</h1>')
             print ('\t\t<h2>To be safe, I generally add about 10-25% to the ' +
                 'time it will take to delete.</h2>')
-            os.system(cscommand)
             if authdata['ORD']:
                 print ('\t\t<br><br><br><h3>Endpoint in ORD detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-                #cfcommand = cfcommand + 'ord\''
                 os.system(cfcommand + 'ord\'')
                 authdata['endpoint'] = authdata['ORD-ENDPOINT']
                 check_cf_stats('ord', authdata)
@@ -255,7 +252,6 @@ if __name__ == '__main__':
                 print ('\t\t<br><br><br><h3>Endpoint in DFW detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-                #cfcommand = cfcommand + 'dfw\''
                 os.system(cfcommand + 'dfw\'')
                 authdata['endpoint'] = authdata['DFW-ENDPOINT']
                 check_cf_stats('dfw', authdata)
@@ -263,7 +259,6 @@ if __name__ == '__main__':
                 print ('\t\t<br><br><br><h3>Endpoint in LON detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-                #cfcommand = cfcommand + 'lon\''
                 os.system(cfcommand + 'lon\'')
                 authdata['endpoint'] = authdata['LON-ENDPOINT']
                 check_cf_stats('lon', authdata)
@@ -291,4 +286,10 @@ if __name__ == '__main__':
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
             check_cf_stats('lon', authdata)
+    os.system(cscommand + 'dfw\'')
+    os.system(cscommand + 'ord\'')
+    os.system(cscommand + 'lon\'')
+    os.system(ngcommand + 'ORD\'')
+    os.system(ngcommand + 'DFW\'')
+    os.system(ngcommand + 'LON\'')
     closebody()
