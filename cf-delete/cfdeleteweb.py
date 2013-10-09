@@ -65,7 +65,8 @@ def cfauth(user=None, apikey=None, region=None):
     json_response = json.loads(connection.getresponse().read())
     connection.close()
     #process the request
-    cfdetails = {'ORD': False, 'DFW': False, 'LON': False}
+    cfdetails = {'ORD': False, 'DFW': False, 'IAD': False,
+                 'SYD': False, 'LON': False, 'HKG': False}
     try:
         catalogs = json_response['access']['serviceCatalog']
         for service in catalogs:
@@ -81,6 +82,18 @@ def cfauth(user=None, apikey=None, region=None):
                     if endpoint['region'] == 'DFW':
                         cfdetails['DFW'] = True
                         cfdetails['DFW-ENDPOINT'] = endpoint['publicURL']
+                        cfdetails['tenantid'] = endpoint['tenantId']
+                    if endpoint['region'] == 'IAD':
+                        cfdetails['IAD'] = True
+                        cfdetails['IAD-ENDPOINT'] = endpoint['publicURL']
+                        cfdetails['tenantid'] = endpoint['tenantId']
+                    if endpoint['region'] == 'SYD':
+                        cfdetails['SYD'] = True
+                        cfdetails['SYD-ENDPOINT'] = endpoint['publicURL']
+                        cfdetails['tenantid'] = endpoint['tenantId']
+                    if endpoint['region'] == 'HKG':
+                        cfdetails['HKG'] = True
+                        cfdetails['HKG-ENDPOINT'] = endpoint['publicURL']
                         cfdetails['tenantid'] = endpoint['tenantId']
                     if endpoint['region'] == 'LON':
                         cfdetails['LON'] = True
@@ -180,10 +193,10 @@ def check_cf_stats(region=None, authdata=None):
     print '\t\tObjects:', objectcount, '<br>'
     print '\t\tStorage Used:', storageused, '<br><br>'
     print ('\t\tThis should approximately between ' + min_delete_time_string +
-        ' and ' + max_delete_time_string + ' to complete.<br>')
+           ' and ' + max_delete_time_string + ' to complete.<br>')
     print ('\t\tI\'d check this again (if the delete is already ' +
-        'running) an hour or two after the delete is scheduled to ' +
-        ' finish and possibly re-run if needed.<br>')
+           'running) an hour or two after the delete is scheduled to ' +
+           'finish and possibly re-run if needed.<br>')
 
 
 if __name__ == '__main__':
@@ -250,15 +263,36 @@ if __name__ == '__main__':
                 check_cf_stats('ord', authdata)
             if authdata['DFW']:
                 print ('\t\t<br><br><br><h3>Endpoint in DFW detected, ' +
-                    'here is what should be deleted and ' +
-                    'about how long it should take:</h3>')
+                       'here is what should be deleted and ' +
+                       'about how long it should take:</h3>')
                 os.system(cfcommand + 'dfw\'')
                 authdata['endpoint'] = authdata['DFW-ENDPOINT']
                 check_cf_stats('dfw', authdata)
+            if authdata['IAD']:
+                print ('\t\t<br><br><br><h3>Endpoint in IAD detected, ' +
+                       'here is what should be deleted and ' +
+                       'about how long it should take:</h3>')
+                os.system(cfcommand + 'iad\'')
+                authdata['endpoint'] = authdata['IAD-ENDPOINT']
+                check_cf_stats('iad', authdata)
+            if authdata['SYD']:
+                print ('\t\t<br><br><br><h3>Endpoint in SYD detected, ' +
+                       'here is what should be deleted and ' +
+                       'about how long it should take:</h3>')
+                os.system(cfcommand + 'syd\'')
+                authdata['endpoint'] = authdata['SYD-ENDPOINT']
+                check_cf_stats('syd', authdata)
+            if authdata['HKG']:
+                print ('\t\t<br><br><br><h3>Endpoint in HKG detected, ' +
+                       'here is what should be deleted and ' +
+                       'about how long it should take:</h3>')
+                os.system(cfcommand + 'hkg\'')
+                authdata['endpoint'] = authdata['HKG-ENDPOINT']
+                check_cf_stats('hkg', authdata)
             if authdata['LON']:
                 print ('\t\t<br><br><br><h3>Endpoint in LON detected, ' +
-                    'here is what should be deleted and ' +
-                    'about how long it should take:</h3>')
+                       'here is what should be deleted and ' +
+                       'about how long it should take:</h3>')
                 os.system(cfcommand + 'lon\'')
                 authdata['endpoint'] = authdata['LON-ENDPOINT']
                 check_cf_stats('lon', authdata)
@@ -277,9 +311,21 @@ if __name__ == '__main__':
         if authdata['DFW']:
             authdata['endpoint'] = authdata['DFW-ENDPOINT']
             print ('\t\t<br><br><br><h3>Endpoint in DFW detected, ' +
+                   'here is what should be deleted and ' +
+                   'about how long it should take:</h3>')
+            check_cf_stats('dfw', authdata)
+        if authdata['IAD']:
+            authdata['endpoint'] = authdata['IAD-ENDPOINT']
+            print ('\t\t<br><br><br><h3>Endpoint in DFW detected, ' +
+                   'here is what should be deleted and ' +
+                   'about how long it should take:</h3>')
+            check_cf_stats('iad', authdata)
+        if authdata['SYD']:
+            authdata['endpoint'] = authdata['SYD-ENDPOINT']
+            print ('\t\t<br><br><br><h3>Endpoint in DFW detected, ' +
                     'here is what should be deleted and ' +
                     'about how long it should take:</h3>')
-            check_cf_stats('dfw', authdata)
+            check_cf_stats('syd', authdata)
         if authdata['LON']:
             authdata['endpoint'] = authdata['LON-ENDPOINT']
             print ('\t\t<br><br><br><h3>Endpoint in LON detected, ' +
@@ -288,8 +334,14 @@ if __name__ == '__main__':
             check_cf_stats('lon', authdata)
     os.system(cscommand + 'dfw\'')
     os.system(cscommand + 'ord\'')
+    os.system(cscommand + 'iad\'')
+    os.system(cscommand + 'syd\'')
+    os.system(cscommand + 'hkg\'')
     os.system(cscommand + 'lon\'')
     os.system(ngcommand + 'ORD\'')
     os.system(ngcommand + 'DFW\'')
+    os.system(ngcommand + 'IAD\'')
+    os.system(ngcommand + 'SYD\'')
+    os.system(ngcommand + 'HKG\'')
     os.system(ngcommand + 'LON\'')
     closebody()

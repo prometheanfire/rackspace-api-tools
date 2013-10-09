@@ -156,11 +156,10 @@ if __name__ == '__main__':
     parser.add_argument('--veryverbose', action='store_true',
                         help='Turn up verbosity to 11')
     parser.add_argument('--endpoint', '-e', required=True,
-                        choices=['dfw', 'lon', 'ord'],
+                        choices=['dfw', 'lon', 'ord', 'syd', 'iad', 'hkg'],
                         help='Sets the datacenter')
     parser.add_argument('--murder', action='store_true',
-                        help=('Murder all objects and servers in an ' +
-                            ' account'))
+                        help='Murder all servers in an account')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('--apikey', '-a',  help='Account api key')
     group.add_argument('--password', '-p', help='Account password')

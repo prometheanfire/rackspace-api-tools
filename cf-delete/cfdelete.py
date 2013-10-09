@@ -59,6 +59,8 @@ def cfauth():
     if args.veryverbose:
         print 'JSON decoded and pretty'
         print json.dumps(json_response, indent=2)
+        print 'JSON nice and ugly'
+        print json.dumps(json_response)
     cfdetails = {}
     try:
         catalogs = json_response['access']['serviceCatalog']
@@ -141,11 +143,11 @@ def get_containers():
         container_delete_pool.join()
         if len(containerlist) >= containerlistsize:
             if len(containerlist) > containerlistsize:
-                print ('Somehow got a list of containers that was greater ' +
-                       'then where there when this program was started ' +
-                       'Going to continue under the assumption that ' +
-                       'containers were added while we were getting the list ' +
-                       'and you still want to delete them.')
+                print('Somehow got a list of containers that was greater ' +
+                      'then where there when this program was started ' +
+                      'Going to continue under the assumption that ' +
+                      'containers were added while we were getting the list ' +
+                      'and you still want to delete them.')
             connection.close()
             break
 
@@ -363,7 +365,7 @@ if __name__ == '__main__':
     parser.add_argument('--veryverbose', action='store_true',
                         help='Turn up verbosity to 11')
     parser.add_argument('--endpoint', '-e', required=True,
-                        choices=['dfw', 'lon', 'ord'],
+                        choices=['dfw', 'lon', 'ord', 'iad', 'hkg', 'syd'],
                         help='Sets the datacenter')
     parser.add_argument('--internal', '-i', action='store_true',
                         help='Use servicenet')
@@ -398,8 +400,8 @@ if __name__ == '__main__':
     if args.authtest:
         authtest()
     elif args.delete and not (args.murder or args.container):
-        print ('You asked me to delete stuff ' +
-               'without telling me what to remove.')
+        print('You asked me to delete stuff ' +
+              'without telling me what to remove.')
         sys.exit()
     if args.delete and args.murder:
         authdata = cfauth()
