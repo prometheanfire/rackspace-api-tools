@@ -34,8 +34,8 @@ def check_if_running(apikey=None):
     #get process list
     processes = []
     for p, c in [x.rstrip('\n').split(' ', 1)
-        for x in os.popen('ps h -eo pid:1,command | grep -v \'grep \' | grep ' + apikey)]:
-            processes.append((int(p), c))
+                 for x in os.popen('ps h -eo pid:1,command | grep -v \'grep \' | grep ' + apikey)]:
+                    processes.append((int(p), c))
     #stages for run or quit
     if processes:
         print '\t\tDelete process already running for this API key.'
@@ -56,7 +56,7 @@ def cfauth(user=None, apikey=None, region=None):
     else:
         authurl = 'auth.api.rackspacecloud.com'
     jsonreq = json.dumps({'auth': {'RAX-KSKEY:apiKeyCredentials':
-        {'username': user, 'apiKey': apikey}}})
+                         {'username': user, 'apiKey': apikey}}})
 
     #make the request
     connection = httplib.HTTPSConnection(authurl, 443)
@@ -121,25 +121,25 @@ def closebody():
     sys.exit()
 
 
-def convert_bytes(bytes):
+def convert_bytes(storage_used):
     """
     Converts bytes into the highest order unit of counting bytes.
     """
-    bytes = float(bytes)
-    if bytes >= 1099511627776:
-        terabytes = bytes / 1099511627776
+    storage_used = float(storage_used)
+    if storage_used >= 1099511627776:
+        terabytes = storage_used / 1099511627776
         size = '%.2fT' % terabytes
-    elif bytes >= 1073741824:
-        gigabytes = bytes / 1073741824
+    elif storage_used >= 1073741824:
+        gigabytes = storage_used / 1073741824
         size = '%.2fG' % gigabytes
-    elif bytes >= 1048576:
-        megabytes = bytes / 1048576
+    elif storage_used >= 1048576:
+        megabytes = storage_used / 1048576
         size = '%.2fM' % megabytes
-    elif bytes >= 1024:
-        kilobytes = bytes / 1024
+    elif storage_used >= 1024:
+        kilobytes = storage_used / 1024
         size = '%.2fK' % kilobytes
     else:
-        size = '%.2fb' % bytes
+        size = '%.2fb' % storage_used
     return size
 
 
@@ -249,15 +249,15 @@ if __name__ == '__main__':
         if not check_if_running(api):
             authdata = cfauth(user, api, region)
             print ('\t\t<h1>You may have to run this again once it ' +
-                'completes but should not have to (hopefully).</h1><br>')
+                   'completes but should not have to (hopefully).</h1><br>')
             print ('\t\t<h1>This is an estimate of how long it will take ' +
-                'only.</h1>')
+                   'only.</h1>')
             print ('\t\t<h2>To be safe, I generally add about 10-25% to the ' +
-                'time it will take to delete.</h2>')
+                   'time it will take to delete.</h2>')
             if authdata['ORD']:
                 print ('\t\t<br><br><br><h3>Endpoint in ORD detected, ' +
-                    'here is what should be deleted and ' +
-                    'about how long it should take:</h3>')
+                       'here is what should be deleted and ' +
+                       'about how long it should take:</h3>')
                 os.system(cfcommand + 'ord\'')
                 authdata['endpoint'] = authdata['ORD-ENDPOINT']
                 check_cf_stats('ord', authdata)
@@ -298,15 +298,15 @@ if __name__ == '__main__':
                 check_cf_stats('lon', authdata)
     elif submit == 'check_cf_stats':
         print ('\t\t<h1>This is an estimate of how long it will take only' +
-            '.</h1>')
+               '.</h1>')
         print ('\t\t<h2>To be safe, I generally add about 10-25% to the ' +
-            'time it will take to delete.</h2>')
+               'time it will take to delete.</h2>')
         authdata = cfauth(user, api, region)
         if authdata['ORD']:
             authdata['endpoint'] = authdata['ORD-ENDPOINT']
             print ('\t\t<br><br><br><h3>Endpoint in ORD detected, ' +
-                    'here is what should be deleted and ' +
-                    'about how long it should take:</h3>')
+                   'here is what should be deleted and ' +
+                   'about how long it should take:</h3>')
             check_cf_stats('ord', authdata)
         if authdata['DFW']:
             authdata['endpoint'] = authdata['DFW-ENDPOINT']
@@ -316,21 +316,21 @@ if __name__ == '__main__':
             check_cf_stats('dfw', authdata)
         if authdata['IAD']:
             authdata['endpoint'] = authdata['IAD-ENDPOINT']
-            print ('\t\t<br><br><br><h3>Endpoint in DFW detected, ' +
+            print ('\t\t<br><br><br><h3>Endpoint in IAD detected, ' +
                    'here is what should be deleted and ' +
                    'about how long it should take:</h3>')
             check_cf_stats('iad', authdata)
         if authdata['SYD']:
             authdata['endpoint'] = authdata['SYD-ENDPOINT']
-            print ('\t\t<br><br><br><h3>Endpoint in DFW detected, ' +
-                    'here is what should be deleted and ' +
-                    'about how long it should take:</h3>')
+            print ('\t\t<br><br><br><h3>Endpoint in SYD detected, ' +
+                   'here is what should be deleted and ' +
+                   'about how long it should take:</h3>')
             check_cf_stats('syd', authdata)
         if authdata['LON']:
             authdata['endpoint'] = authdata['LON-ENDPOINT']
             print ('\t\t<br><br><br><h3>Endpoint in LON detected, ' +
-                    'here is what should be deleted and ' +
-                    'about how long it should take:</h3>')
+                   'here is what should be deleted and ' +
+                   'about how long it should take:</h3>')
             check_cf_stats('lon', authdata)
     os.system(cscommand + 'dfw\'')
     os.system(cscommand + 'ord\'')
