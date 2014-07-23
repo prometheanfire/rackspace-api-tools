@@ -326,6 +326,12 @@ if __name__ == '__main__':
                    'here is what should be deleted and ' +
                    'about how long it should take:</h3>')
             check_cf_stats('syd', authdata)
+        if authdata['HKG']:
+            authdata['endpoint'] = authdata['HKG-ENDPOINT']
+            print ('\t\t<br><br><br><h3>Endpoint in HKG detected, ' +
+                   'here is what should be deleted and ' +
+                   'about how long it should take:</h3>')
+            check_cf_stats('hkg', authdata)
         if authdata['LON']:
             authdata['endpoint'] = authdata['LON-ENDPOINT']
             print ('\t\t<br><br><br><h3>Endpoint in LON detected, ' +
