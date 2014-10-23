@@ -130,7 +130,6 @@ def get_containers():
             continue
         for names in json_response:
             containerlist.append(names['name'])
-            print lastcontainer
         if args.verbose:
             print 'Number of Containers:\t', len(containerlist)
         if args.veryverbose:
